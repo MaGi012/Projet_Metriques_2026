@@ -1,50 +1,53 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
+    <meta charset="UTF-8">
+    <title>Histogramme</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
 
-<meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 40px;
+            text-align: center;
+        }
 
-<title>Histogramme</title>
+        h1 {
+            color: #0d6efd;
+        }
 
-<script src="https://www.gstatic.com/charts/loader.js"></script>
+        .box {
+            width: 90%;
+            max-width: 1200px;
+            height: 650px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            padding: 20px;
+        }
 
-<style>
+        #chart {
+            width: 100%;
+            height: 100%;
+        }
 
-body{
-font-family:Arial,Helvetica,sans-serif;
-background:#f4f6f9;
-margin:40px;
-text-align:center;
-}
+        #loading {
+            font-size: 22px;
+            color: #555;
+            margin-top: 200px;
+        }
 
-h1{
-color:#0d6efd;
-}
-
-#chart{
-width:100%;
-height:600px;
-margin:auto;
-display:none;
-}
-
-#loading{
-margin-top:80px;
-font-size:24px;
-color:#555;
-}
-
-a{
-display:inline-block;
-margin-bottom:30px;
-text-decoration:none;
-font-weight:bold;
-color:#0d6efd;
-}
-
-</style>
-
+        a {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+    </style>
 </head>
 
 <body>
@@ -53,61 +56,51 @@ color:#0d6efd;
 
 <h1>Histogramme des températures de Paris</h1>
 
-<div id="loading">
-⏳ Chargement du graphique...
+<div class="box">
+    <div id="loading">⏳ Chargement du graphique...</div>
+    <div id="chart"></div>
 </div>
 
-<div id="chart"></div>
-
 <script>
-
-google.charts.load('current',{'packages':['corechart']});
+google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawChart);
 
-async function drawChart(){
+async function drawChart() {
+    try {
+        const response = await fetch("/paris");
+        const json = await response.json();
 
-const response=await fetch("/paris");
+        const data = new google.visualization.DataTable();
+        data.addColumn('string', 'Date');
+        data.addColumn('number', 'Température °C');
 
-const json=await response.json();
+        json.slice(0, 24).forEach(e => {
+            data.addRow([
+                e.datetime.substring(5, 16),
+                Number(e.temperature_c)
+            ]);
+        });
 
-const data=new google.visualization.DataTable();
+        const options = {
+            title: 'Températures horaires à Paris',
+            legend: { position: 'bottom' },
+            hAxis: { title: 'Date / Heure' },
+            vAxis: { title: 'Température (°C)' },
+            width: '100%',
+            height: '100%'
+        };
 
-data.addColumn('string','Date');
+        document.getElementById("loading").style.display = "none";
 
-data.addColumn('number','Température');
+        const chart = new google.visualization.ColumnChart(document.getElementById("chart"));
+        chart.draw(data, options);
 
-json.slice(0,24).forEach(e=>{
-
-data.addRow([
-e.datetime.substring(5,16),
-Number(e.temperature_c)
-]);
-
-});
-
-const options={
-
-title:'Températures horaires à Paris',
-
-legend:{position:'bottom'},
-
-hAxis:{title:'Date'},
-
-vAxis:{title:'Température (°C)'}
-
-};
-
-const chart=new google.visualization.ColumnChart(document.getElementById("chart"));
-
-chart.draw(data,options);
-
-document.getElementById("loading").style.display="none";
-document.getElementById("chart").style.display="block";
-
+    } catch (error) {
+        document.getElementById("loading").innerHTML = "Erreur de chargement du graphique.";
+        console.error(error);
+    }
 }
-
 </script>
 
 </body>
-
 </html>

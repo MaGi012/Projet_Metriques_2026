@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <title>Atelier</title>
-
     <script src="https://www.gstatic.com/charts/loader.js"></script>
 
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f4f6f9;
-            margin: 40px;
+            margin: 0;
+            padding: 40px;
             text-align: center;
         }
 
@@ -22,29 +21,35 @@
         .description {
             max-width: 800px;
             margin: auto;
-            margin-bottom: 30px;
             color: #555;
             font-size: 17px;
         }
 
-        #loading {
-            margin-top: 80px;
-            font-size: 24px;
-            color: #555;
+        .box {
+            width: 90%;
+            max-width: 1000px;
+            height: 620px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            padding: 20px;
         }
 
         #chart {
             width: 100%;
-            height: 600px;
-            display: none;
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
+            height: 100%;
+        }
+
+        #loading {
+            font-size: 22px;
+            color: #555;
+            margin-top: 200px;
         }
 
         a {
             display: inline-block;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-decoration: none;
             font-weight: bold;
             color: #0d6efd;
@@ -56,54 +61,64 @@
 
 <a href="/">⬅ Retour à l'accueil</a>
 
-<h1>Atelier : Analyse du vent à Marseille</h1>
+<h1>Atelier : Répartition du vent à Marseille</h1>
 
 <p class="description">
-    Ce graphique représente l’évolution de la vitesse du vent à Marseille.
-    Chaque point correspond à une heure de prévision fournie par l’API Open-Meteo.
+    Ce graphique présente la répartition des prévisions de vent à Marseille selon trois niveaux :
+    faible, modéré et fort.
 </p>
 
-<div id="loading">⏳ Chargement du graphique...</div>
-
-<div id="chart"></div>
+<div class="box">
+    <div id="loading">⏳ Chargement du graphique...</div>
+    <div id="chart"></div>
+</div>
 
 <script>
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawChart);
 
 async function drawChart() {
-    const response = await fetch("/marseille");
-    const json = await response.json();
+    try {
+        const response = await fetch("/marseille");
+        const json = await response.json();
 
-    const data = new google.visualization.DataTable();
+        let faible = 0;
+        let modere = 0;
+        let fort = 0;
 
-    data.addColumn('number', 'Heure');
-    data.addColumn('number', 'Vitesse du vent');
+        json.forEach(e => {
+            let vent = Number(e.wind_speed);
 
-    json.slice(0, 48).forEach((e, index) => {
-        data.addRow([
-            index + 1,
-            Number(e.wind_speed)
+            if (vent < 15) {
+                faible++;
+            } else if (vent < 30) {
+                modere++;
+            } else {
+                fort++;
+            }
+        });
+
+        const data = google.visualization.arrayToDataTable([
+            ['Niveau de vent', 'Nombre d’heures'],
+            ['Vent faible', faible],
+            ['Vent modéré', modere],
+            ['Vent fort', fort]
         ]);
-    });
 
-    const options = {
-        title: 'Vitesse du vent à Marseille sur 48 heures',
-        legend: { position: 'bottom' },
-        hAxis: {
-            title: 'Heures de prévision'
-        },
-        vAxis: {
-            title: 'Vitesse du vent (km/h)'
-        },
-        pointSize: 7
-    };
+        const options = {
+            title: 'Répartition du vent à Marseille',
+            pieHole: 0.35
+        };
 
-    const chart = new google.visualization.ScatterChart(document.getElementById('chart'));
-    chart.draw(data, options);
+        document.getElementById("loading").style.display = "none";
 
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("chart").style.display = "block";
+        const chart = new google.visualization.PieChart(document.getElementById("chart"));
+        chart.draw(data, options);
+
+    } catch (error) {
+        document.getElementById("loading").innerHTML = "Erreur de chargement du graphique.";
+        console.error(error);
+    }
 }
 </script>
 
