@@ -64,6 +64,24 @@ def histogramme():
 # ------------------------------
 # Atelier
 # ------------------------------
+@app.get("/marseille")
+def api_marseille():
+    url = "https://api.open-meteo.com/v1/forecast?latitude=43.2965&longitude=5.3698&hourly=wind_speed_10m"
+    response = requests.get(url)
+    data = response.json()
+
+    times = data.get("hourly", {}).get("time", [])
+    winds = data.get("hourly", {}).get("wind_speed_10m", [])
+
+    result = []
+    for i in range(min(len(times), len(winds))):
+        result.append({
+            "datetime": times[i],
+            "wind_speed": winds[i]
+        })
+
+    return jsonify(result)
+
 @app.route("/atelier")
 def atelier():
     return render_template("atelier.html")
