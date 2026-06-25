@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <title>Atelier</title>
@@ -8,63 +9,101 @@
 
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, Helvetica, sans-serif;
             background: #f4f6f9;
+            margin: 40px;
             text-align: center;
-            margin: 30px;
+        }
+
+        h1 {
+            color: #0d6efd;
+        }
+
+        .description {
+            max-width: 800px;
+            margin: auto;
+            margin-bottom: 30px;
+            color: #555;
+            font-size: 17px;
+        }
+
+        #loading {
+            margin-top: 80px;
+            font-size: 24px;
+            color: #555;
         }
 
         #chart {
-            width: 500px;
-            height: 400px;
-            margin: auto;
+            width: 100%;
+            height: 600px;
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
         }
 
         a {
             display: inline-block;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #0d6efd;
         }
     </style>
 </head>
 
 <body>
 
-<a href="/">⬅ Retour accueil</a>
+<a href="/">⬅ Retour à l'accueil</a>
 
-<h1>Atelier : Vitesse du vent à Marseille</h1>
+<h1>Atelier : Analyse du vent à Marseille</h1>
 
-<p>Indicateur météo basé sur l’API Open-Meteo.</p>
+<p class="description">
+    Ce graphique représente l’évolution de la vitesse du vent à Marseille.
+    Chaque point correspond à une heure de prévision fournie par l’API Open-Meteo.
+</p>
+
+<div id="loading">⏳ Chargement du graphique...</div>
 
 <div id="chart"></div>
 
 <script>
-google.charts.load('current', {'packages':['gauge']});
+google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawChart);
 
 async function drawChart() {
     const response = await fetch("/marseille");
     const json = await response.json();
 
-    const wind = Number(json[0].wind_speed);
+    const data = new google.visualization.DataTable();
 
-    const data = google.visualization.arrayToDataTable([
-        ['Label', 'Value'],
-        ['Vent km/h', wind]
-    ]);
+    data.addColumn('number', 'Heure');
+    data.addColumn('number', 'Vitesse du vent');
+
+    json.slice(0, 48).forEach((e, index) => {
+        data.addRow([
+            index + 1,
+            Number(e.wind_speed)
+        ]);
+    });
 
     const options = {
-        width: 500,
-        height: 400,
-        redFrom: 50,
-        redTo: 80,
-        yellowFrom: 30,
-        yellowTo: 50,
-        minorTicks: 5,
-        max: 80
+        title: 'Vitesse du vent à Marseille sur 48 heures',
+        legend: { position: 'bottom' },
+        hAxis: {
+            title: 'Heures de prévision'
+        },
+        vAxis: {
+            title: 'Vitesse du vent (km/h)'
+        },
+        pointSize: 7
     };
 
-    const chart = new google.visualization.Gauge(document.getElementById('chart'));
+    const chart = new google.visualization.ScatterChart(document.getElementById('chart'));
     chart.draw(data, options);
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("chart").style.display = "block";
 }
 </script>
 
