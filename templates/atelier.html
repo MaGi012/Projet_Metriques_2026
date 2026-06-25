@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Atelier</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+            background: #f4f6f9;
+        }
+
+        #piechart {
+            width: 100%;
+            height: 550px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        a {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<a href="/">⬅ Retour accueil</a>
+
+<h1>Atelier : Répartition des températures à Paris</h1>
+
+<p>Ce graphique classe les températures en trois catégories : froid, doux et chaud.</p>
+
+<div id="piechart"></div>
+
+<script>
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawChart);
+
+async function drawChart() {
+    const response = await fetch("/paris");
+    const json = await response.json();
+
+    let froid = 0;
+    let doux = 0;
+    let chaud = 0;
+
+    json.forEach(e => {
+        let t = Number(e.temperature_c);
+
+        if (t < 10) {
+            froid++;
+        } else if (t < 20) {
+            doux++;
+        } else {
+            chaud++;
+        }
+    });
+
+    const data = google.visualization.arrayToDataTable([
+        ['Catégorie', 'Nombre d’heures'],
+        ['Froid : moins de 10°C', froid],
+        ['Doux : entre 10°C et 20°C', doux],
+        ['Chaud : plus de 20°C', chaud]
+    ]);
+
+    const options = {
+        title: 'Répartition des températures',
+        pieHole: 0.4
+    };
+
+    const chart = new google.visualization.PieChart(document.getElementById('piechart'));
+    chart.draw(data, options);
+}
+</script>
+
+</body>
+</html>

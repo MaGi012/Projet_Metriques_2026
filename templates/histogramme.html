@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Histogramme</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+            background: #f4f6f9;
+        }
+
+        #chart {
+            width: 100%;
+            height: 550px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        a {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<a href="/">⬅ Retour accueil</a>
+
+<h1>Histogramme des températures à Paris</h1>
+
+<div id="chart"></div>
+
+<script>
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawChart);
+
+async function drawChart() {
+    const response = await fetch("/paris");
+    const json = await response.json();
+
+    const data = new google.visualization.DataTable();
+    data.addColumn('string', 'Date');
+    data.addColumn('number', 'Température °C');
+
+    json.slice(0, 24).forEach(e => {
+        data.addRow([
+            e.datetime.substring(5, 16),
+            Number(e.temperature_c)
+        ]);
+    });
+
+    const options = {
+        title: 'Températures horaires à Paris',
+        legend: { position: 'bottom' },
+        hAxis: { title: 'Date / Heure' },
+        vAxis: { title: 'Température °C' }
+    };
+
+    const chart = new google.visualization.ColumnChart(document.getElementById('chart'));
+    chart.draw(data, options);
+}
+</script>
+
+</body>
+</html>
